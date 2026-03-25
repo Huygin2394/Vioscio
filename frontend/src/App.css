@@ -18,3 +18,58 @@
   font-size: 1.125rem;
   color: #5b6070;
 }
+
+.posts {
+  width: min(860px, 100%);
+  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid #e9eaf2;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.posts h2 {
+  margin: 0 0 12px 0;
+  font-size: 1.25rem;
+}
+
+.posts__status {
+  margin: 0;
+  color: #5b6070;
+}
+
+.posts__status--error {
+  color: #c62828;
+}
+
+.posts__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.posts__item {
+  border: 1px solid #eef0f6;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.posts__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.posts__excerpt {
+  margin: 8px 0 0 0;
+  color: #5b6070;
+  line-height: 1.45;
+}
+
+.posts__meta {
+  margin: 10px 0 0 0;
+  color: #7a7f90;
+  font-size: 0.95rem;
+}
