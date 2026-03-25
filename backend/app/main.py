@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, List
 
 app = FastAPI(title="Huy Blog API")
 
@@ -23,23 +22,30 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/api/posts")
-def list_posts() -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Return blog posts list for Home page.
-    If no posts are available, return a sample post.
-    """
-    posts: List[Dict[str, Any]] = []
-
-    if not posts:
-        # Sample data (content is not important for this task)
-        posts = [
-            {
-                "id": "sample-1",
-                "title": "Sample Blog Post",
-                "excerpt": "This is a sample blog post shown on the Home page.",
-                "createdAt": "2026-03-25",
-            }
-        ]
-
-    return {"posts": posts}
+@app.get("/api/blogs")
+def list_my_blogs():
+    # Mock data: "tôi" ở đây được hiểu là Huy.
+    # Có thể thay bằng DB hoặc CMS sau.
+    return [
+        {
+            "id": 1,
+            "title": "Hello Vioscio: Khởi động project",
+            "excerpt": "Ghi lại quá trình dựng frontend React + backend FastAPI và cách chạy local.",
+            "created_at": "2026-01-12",
+            "author": "Huy",
+        },
+        {
+            "id": 2,
+            "title": "Tips tối ưu Vite cho dự án nhỏ",
+            "excerpt": "Những mẹo cấu hình để dev/build nhanh và ít rườm rà hơn.",
+            "created_at": "2026-02-05",
+            "author": "Huy",
+        },
+        {
+            "id": 3,
+            "title": "Thiết kế API tối giản với FastAPI",
+            "excerpt": "Trình bày cách tổ chức endpoint gọn gàng, dễ mở rộng khi cần auth và dữ liệu thật.",
+            "created_at": "2026-03-02",
+            "author": "Huy",
+        },
+    ]

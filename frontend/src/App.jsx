@@ -1,36 +1,38 @@
-import './App.css'
 import { useEffect, useState } from 'react'
+import './App.css'
 
 function App() {
-  const [posts, setPosts] = useState([])
+  const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    let isMounted = true
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const controller = new AbortController()
 
-    async function fetchPosts() {
+    async function loadBlogs() {
       try {
         setLoading(true)
-        setError('')
+        setError(null)
 
-        // Backend runs separately; rely on CORS (enabled in FastAPI).
-        const res = await fetch('http://localhost:8000/api/posts')
-        if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
+        const res = await fetch(`${apiBaseUrl}/api/blogs`, { signal: controller.signal })
+        if (!res.ok) throw new Error(`Failed to load blogs: ${res.status}`)
 
         const data = await res.json()
-        if (isMounted) setPosts(Array.isArray(data?.posts) ? data.posts : [])
-      } catch (e) {
-        if (isMounted) setError(e?.message || 'Unknown error')
+        setBlogs(Array.isArray(data) ? data : [])
+      } catch (err) {
+        // Ignore abort errors; show others.
+        if (err?.name !== 'AbortError') {
+          setError(err?.message || 'Unknown error')
+        }
       } finally {
-        if (isMounted) setLoading(false)
+        setLoading(false)
       }
     }
 
-    fetchPosts()
-    return () => {
-      isMounted = false
-    }
+    loadBlogs()
+
+    return () => controller.abort()
   }, [])
 
   return (
@@ -38,21 +40,27 @@ function App() {
       <h1>Welcome to Huy blog</h1>
       <p>Frontend: React | Backend: FastAPI</p>
 
-      <section className="posts">
-        <h2>Your blog posts</h2>
-
-        {loading && <p className="posts__status">Loading...</p>}
-        {error && <p className="posts__status posts__status--error">{error}</p>}
-
-        {!loading && !error && (
-          <ul className="posts__list">
-            {posts.map((post) => (
-              <li key={post.id} className="posts__item">
-                <h3 className="posts__title">{post.title}</h3>
-                {post.excerpt && <p className="posts__excerpt">{post.excerpt}</p>}
-                {post.createdAt && (
-                  <p className="posts__meta">Created at: {post.createdAt}</p>
-                )}
+      <section className="blogs">
+        <h2>Các bài blog tôi đã viết</h2>
+        {loading ? (
+          <p className="blogs__status">Đang tải...</p>
+        ) : error ? (
+          <p className="blogs__status blogs__status--error">{error}</p>
+        ) : blogs.length === 0 ? (
+          <p className="blogs__status">Chưa có bài viết.</p>
+        ) : (
+          <ul className="blogs__list">
+            {blogs.map((blog) => (
+              <li key={blog.id} className="blogs__item">
+                <article>
+                  <h3 className="blogs__title">{blog.title}</h3>
+                  {blog.excerpt ? <p className="blogs__excerpt">{blog.excerpt}</p> : null}
+                  {blog.created_at ? (
+                    <p className="blogs__meta">
+                      Đăng lúc <time dateTime={blog.created_at}>{blog.created_at}</time>
+                    </p>
+                  ) : null}
+                </article>
               </li>
             ))}
           </ul>
