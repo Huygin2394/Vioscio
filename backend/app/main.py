@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from datetime import date
+from typing import Optional
 
 app = FastAPI(title="Huy Blog API")
 
@@ -24,9 +27,17 @@ def health_check():
 
 @app.get("/api/blogs")
 def list_my_blogs():
-    # Mock data: "tôi" ở đây được hiểu là Huy.
-    # Có thể thay bằng DB hoặc CMS sau.
-    return [
+    # Data in-memory; có thể thay bằng DB/CMS sau.
+    return BLOGS
+
+
+class CreateBlogRequest(BaseModel):
+    title: str = Field(..., min_length=1)
+    excerpt: Optional[str] = None
+    author: Optional[str] = "Huy"
+
+
+BLOGS = [
         {
             "id": 1,
             "title": "Hello Vioscio: Khởi động project",
@@ -48,4 +59,21 @@ def list_my_blogs():
             "created_at": "2026-03-02",
             "author": "Huy",
         },
-    ]
+]
+
+
+@app.post("/api/blogs")
+def create_blog(payload: CreateBlogRequest):
+    # Simple id generation for in-memory storage.
+    next_id = max((b["id"] for b in BLOGS), default=0) + 1
+    created_at = date.today().isoformat()
+
+    blog = {
+        "id": next_id,
+        "title": payload.title,
+        "excerpt": payload.excerpt,
+        "created_at": created_at,
+        "author": payload.author or "Huy",
+    }
+    BLOGS.append(blog)
+    return blog
