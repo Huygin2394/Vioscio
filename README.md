@@ -35,3 +35,11 @@ npm run dev -- --host 0.0.0.0 --port 5173
 Mở trình duyệt: `http://localhost:5173`
 
 Trang Home hiển thị: **Welcome to Huy blog**.
+
+## Technical Blog Articles (English)
+
+Added three English technical blog posts under `docs/blog/`:
+
+- `docs/blog/cursor-internal-techniques.md`
+- `docs/blog/swe-agent-aci-explained.md`
+- `docs/blog/devin-technical-architecture-explained.md`
