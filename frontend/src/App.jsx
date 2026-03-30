@@ -39,19 +39,25 @@ function App() {
 
   return (
     <main className="home">
-      <div className="home__hero">
-        <div className="home__heroCopy">
-          <h1>Welcome to Huy blog</h1>
-          <p className="home__tagline">Frontend: React | Backend: FastAPI</p>
-          <div className="home__badges" aria-label="Tech stack">
-            <span className="badge">React</span>
-            <span className="badge">FastAPI</span>
-            <span className="badge badge--muted">Vite</span>
+      <div className="hero">
+        <div className="hero__inner">
+          <div>
+            <div className="hero__badge">
+              <span className="hero__badge-dot" aria-hidden="true" />
+              <span className="hero__badge-text">Vioscio • Blog</span>
+            </div>
+            <h1 className="hero__title">Welcome to Huy blog</h1>
+            <p className="hero__subtitle">Frontend: React | Backend: FastAPI</p>
+            <div className="hero__metaRow" aria-label="Tech stack">
+              <span className="pill">React</span>
+              <span className="pill">FastAPI</span>
+              <span className="pill">Vite</span>
+            </div>
           </div>
-        </div>
 
-        <div className="home__heroMedia" aria-hidden="true">
-          <img className="home__heroImage" src={heroImage} alt="" />
+          <div className="hero__media" aria-hidden="true">
+            <img className="hero__image" src={heroImage} alt="" />
+          </div>
         </div>
       </div>
 
