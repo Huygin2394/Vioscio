@@ -274,6 +274,46 @@
   color: #5b6070;
 }
 
+.blogs__likeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.likeButton {
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #ffffff;
+  color: #111827;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease,
+    background 120ms ease;
+}
+
+.likeButton:hover {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+  transform: translateY(-1px);
+}
+
+.likeButton--active {
+  border-color: rgba(225, 29, 72, 0.5);
+  background: rgba(225, 29, 72, 0.08);
+  color: #be123c;
+}
+
+.likeCount {
+  font-size: 0.95rem;
+  color: #5b6070;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
 @media (min-width: 740px) {
   .hero__inner {
     grid-template-columns: 1.1fr 0.9fr;

@@ -1,15 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import heroImage from './assets/hero.png'
+
+function getOrCreateUserId() {
+  try {
+    const existing = localStorage.getItem('vioscio_user_id')
+    if (existing) return existing
+
+    const id = globalThis.crypto?.randomUUID
+      ? globalThis.crypto.randomUUID()
+      : `u_${Math.random().toString(16).slice(2)}_${Date.now()}`
+    localStorage.setItem('vioscio_user_id', id)
+    return id
+  } catch {
+    // Fallback for environments where localStorage/crypto aren't available.
+    return `anonymous_${Math.random().toString(16).slice(2)}`
+  }
+}
 
 function App() {
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadToken, setReloadToken] = useState(0)
+  const apiBaseUrl = useMemo(() => import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000', [])
+  const [userId] = useState(() => getOrCreateUserId())
 
   useEffect(() => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
     const controller = new AbortController()
 
     async function loadBlogs() {
@@ -17,7 +34,10 @@ function App() {
         setLoading(true)
         setError(null)
 
-        const res = await fetch(`${apiBaseUrl}/api/blogs`, { signal: controller.signal })
+        const res = await fetch(`${apiBaseUrl}/api/blogs`, {
+          signal: controller.signal,
+          headers: { 'X-User-Id': userId },
+        })
         if (!res.ok) throw new Error(`Failed to load blogs: ${res.status}`)
 
         const data = await res.json()
@@ -35,7 +55,35 @@ function App() {
     loadBlogs()
 
     return () => controller.abort()
-  }, [reloadToken])
+  }, [reloadToken, apiBaseUrl, userId])
+
+  async function handleToggleLike(blogId) {
+    try {
+      setError(null)
+      const res = await fetch(`${apiBaseUrl}/api/blogs/${blogId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+        },
+      })
+      if (!res.ok) throw new Error(`Failed to toggle like: ${res.status}`)
+      const data = await res.json()
+
+      setBlogs((prev) =>
+        prev.map((blog) => {
+          if (blog.id !== data.blog_id) return blog
+          return {
+            ...blog,
+            liked_by_user: Boolean(data.liked),
+            likes_count: Number(data.likes_count),
+          }
+        }),
+      )
+    } catch (err) {
+      setError(err?.message || 'Unknown error')
+    }
+  }
 
   return (
     <main className="home">
@@ -94,6 +142,20 @@ function App() {
                       Đăng lúc <time dateTime={blog.created_at}>{blog.created_at}</time>
                     </p>
                   ) : null}
+
+                  <div className="blogs__likeRow">
+                    <button
+                      type="button"
+                      className={`likeButton ${blog.liked_by_user ? 'likeButton--active' : ''}`}
+                      aria-pressed={blog.liked_by_user}
+                      onClick={() => handleToggleLike(blog.id)}
+                    >
+                      {blog.liked_by_user ? 'Đã thích' : 'Thích'}
+                    </button>
+                    <span className="likeCount" aria-label={`${blog.likes_count ?? 0} lượt thích`}>
+                      {blog.likes_count ?? 0} ❤️
+                    </span>
+                  </div>
                 </article>
               </li>
             ))}
