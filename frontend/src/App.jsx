@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import heroImage from './assets/hero.png'
 
 function App() {
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -33,21 +35,47 @@ function App() {
     loadBlogs()
 
     return () => controller.abort()
-  }, [])
+  }, [reloadToken])
 
   return (
     <main className="home">
-      <h1>Welcome to Huy blog</h1>
-      <p>Frontend: React | Backend: FastAPI</p>
+      <div className="home__hero">
+        <div className="home__heroCopy">
+          <h1>Welcome to Huy blog</h1>
+          <p className="home__tagline">Frontend: React | Backend: FastAPI</p>
+          <div className="home__badges" aria-label="Tech stack">
+            <span className="badge">React</span>
+            <span className="badge">FastAPI</span>
+            <span className="badge badge--muted">Vite</span>
+          </div>
+        </div>
+
+        <div className="home__heroMedia" aria-hidden="true">
+          <img className="home__heroImage" src={heroImage} alt="" />
+        </div>
+      </div>
 
       <section className="blogs">
-        <h2>Các bài blog tôi đã viết</h2>
+        <header className="blogs__header">
+          <h2>Các bài blog tôi đã viết</h2>
+          <p className="blogs__count" aria-live="polite">
+            {loading ? 'Đang tải...' : `${blogs.length} bài viết`}
+          </p>
+        </header>
         {loading ? (
-          <p className="blogs__status">Đang tải...</p>
+          <div className="blogs__status blogs__status--loading" aria-live="polite">
+            <div className="spinner" aria-hidden="true" />
+            <span>Đang tải danh sách bài viết...</span>
+          </div>
         ) : error ? (
-          <p className="blogs__status blogs__status--error">{error}</p>
+          <div className="blogs__status blogs__status--error" role="alert">
+            <p className="blogs__statusText">{error}</p>
+            <button className="button" type="button" onClick={() => setReloadToken((t) => t + 1)}>
+              Thử lại
+            </button>
+          </div>
         ) : blogs.length === 0 ? (
-          <p className="blogs__status">Chưa có bài viết.</p>
+          <p className="blogs__status blogs__status--empty">Chưa có bài viết.</p>
         ) : (
           <ul className="blogs__list">
             {blogs.map((blog) => (
