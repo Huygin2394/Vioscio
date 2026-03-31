@@ -1,12 +1,19 @@
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 
-# In-memory like storage (no DB in this demo repo).
+# In-memory like/comment storage (no DB in this demo repo).
 # Key: blog id -> set of user ids who liked it.
 likes_by_blog: Dict[int, Set[str]] = {}
+# Key: blog id -> list of comment dicts.
+comments_by_blog: Dict[int, List[Dict]] = {}
+
+
+class CommentCreate(BaseModel):
+    content: str
 
 app = FastAPI(title="Huy Blog API")
 
@@ -81,7 +88,7 @@ def list_my_blogs(x_user_id: str | None = Header(default=None)):
         },
     ]
 
-    # Attach like info.
+    # Attach like & comment info.
     result = []
     for blog in blogs:
         blog_id = int(blog["id"])
@@ -91,6 +98,7 @@ def list_my_blogs(x_user_id: str | None = Header(default=None)):
                 **blog,
                 "likes_count": len(liked_users),
                 "liked_by_user": user_id in liked_users,
+                "comments_count": len(comments_by_blog.get(blog_id, [])),
             }
         )
     return result
@@ -125,5 +133,56 @@ def toggle_like(blog_id: int, x_user_id: str | None = Header(default=None)):
 
 
 def reset_likes_state() -> None:
-    """Test helper: clear in-memory like state."""
+    """Test helper: clear in-memory state (likes, comments)."""
     likes_by_blog.clear()
+    comments_by_blog.clear()
+
+
+def _ensure_blog_exists(blog_id: int) -> None:
+    """Validate that the requested blog id exists in our mock list."""
+    valid_ids = {1, 2, 3}
+    if blog_id not in valid_ids:
+        raise HTTPException(status_code=404, detail="Blog not found")
+
+
+@app.get("/api/blogs/{blog_id}/comments")
+def list_comments(blog_id: int):
+    """
+    List comments for a given blog.
+
+    Since this is a demo, comments are stored in-memory only.
+    """
+    _ensure_blog_exists(int(blog_id))
+    return comments_by_blog.get(int(blog_id), [])
+
+
+@app.post("/api/blogs/{blog_id}/comments")
+def add_comment(blog_id: int, payload: CommentCreate, x_user_id: str | None = Header(default=None)):
+    """
+    Add a new comment for a blog post.
+
+    The caller must provide:
+    - Header X-User-Id: identifies the commenter.
+    - JSON body with `content`: the comment text.
+    """
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing X-User-Id header")
+
+    content = (payload.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Comment content is required")
+
+    blog_id_int = int(blog_id)
+    _ensure_blog_exists(blog_id_int)
+
+    comments = comments_by_blog.setdefault(blog_id_int, [])
+    comment_id = len(comments) + 1
+    comment = {
+        "id": comment_id,
+        "blog_id": blog_id_int,
+        "user_id": x_user_id,
+        "content": content,
+    }
+    comments.append(comment)
+
+    return comment
