@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import heroImage from './assets/hero.png'
+import heroImage from './assets/vite.svg'
 
 function getOrCreateUserId() {
   try {
@@ -26,6 +26,7 @@ function App() {
   const [author, setAuthor] = useState(null)
   const [authorLoading, setAuthorLoading] = useState(false)
   const [authorError, setAuthorError] = useState(null)
+  const [authorReloadToken, setAuthorReloadToken] = useState(0)
   const [route, setRoute] = useState(() => (globalThis.location?.hash || '#/').replace('#', ''))
   const apiBaseUrl = useMemo(() => import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000', [])
   const [userId] = useState(() => getOrCreateUserId())
@@ -91,7 +92,7 @@ function App() {
 
     loadAuthor()
     return () => controller.abort()
-  }, [route, apiBaseUrl])
+  }, [route, apiBaseUrl, authorReloadToken])
 
   async function handleToggleLike(blogId) {
     try {
@@ -153,7 +154,7 @@ function App() {
           ) : authorError ? (
             <div className="statusRow statusRow--error" role="alert">
               <p className="statusRow__text">{authorError}</p>
-              <button className="button" type="button" onClick={() => setRoute('/author')}>
+              <button className="button" type="button" onClick={() => setAuthorReloadToken((t) => t + 1)}>
                 Thử lại
               </button>
             </div>
