@@ -1,5 +1,12 @@
-from fastapi import FastAPI
+from typing import Dict, Set
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+
+# In-memory like storage (no DB in this demo repo).
+# Key: blog id -> set of user ids who liked it.
+likes_by_blog: Dict[int, Set[str]] = {}
 
 app = FastAPI(title="Huy Blog API")
 
@@ -23,10 +30,18 @@ def health_check():
 
 
 @app.get("/api/blogs")
-def list_my_blogs():
+def list_my_blogs(x_user_id: str | None = Header(default=None)):
+    """
+    List blogs with like info.
+
+    We don't have auth in this demo, so the caller can pass X-User-Id to
+    personalize the `liked_by_user` flag and toggle likes.
+    """
+    user_id = x_user_id or "anonymous"
+
     # Mock data: "tôi" ở đây được hiểu là Huy.
     # Có thể thay bằng DB hoặc CMS sau.
-    return [
+    blogs = [
         {
             "id": 1,
             "title": "Hello Vioscio: Khởi động project",
@@ -49,3 +64,50 @@ def list_my_blogs():
             "author": "Huy",
         },
     ]
+
+    # Attach like info.
+    result = []
+    for blog in blogs:
+        blog_id = int(blog["id"])
+        liked_users = likes_by_blog.get(blog_id, set())
+        result.append(
+            {
+                **blog,
+                "likes_count": len(liked_users),
+                "liked_by_user": user_id in liked_users,
+            }
+        )
+    return result
+
+
+@app.post("/api/blogs/{blog_id}/like")
+def toggle_like(blog_id: int, x_user_id: str | None = Header(default=None)):
+    """
+    Toggle like for a blog post.
+
+    - If X-User-Id likes the blog: unlike it.
+    - If X-User-Id hasn't liked the blog: like it.
+    """
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing X-User-Id header")
+
+    user_id = x_user_id
+
+    liked_users = likes_by_blog.setdefault(int(blog_id), set())
+    if user_id in liked_users:
+        liked_users.remove(user_id)
+        liked = False
+    else:
+        liked_users.add(user_id)
+        liked = True
+
+    return {
+        "blog_id": int(blog_id),
+        "liked": liked,
+        "likes_count": len(liked_users),
+    }
+
+
+def reset_likes_state() -> None:
+    """Test helper: clear in-memory like state."""
+    likes_by_blog.clear()
