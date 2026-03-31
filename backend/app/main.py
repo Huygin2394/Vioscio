@@ -29,6 +29,22 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.get("/api/author")
+def author_information():
+    return {
+        "name": "Huy",
+        "role": "Tác giả / Developer",
+        "bio": "Một người thích viết blog kỹ thuật và build những dự án nhỏ gọn, dễ chạy local.",
+        "location": "Việt Nam",
+        "stack": ["React", "FastAPI", "Vite"],
+        "contact": {"email": "huy@example.com"},
+        "links": {
+            "github": "https://github.com/Huygin2394",
+            "facebook": "https://facebook.com/",
+        },
+    }
+
+
 @app.get("/api/blogs")
 def list_my_blogs(x_user_id: str | None = Header(default=None)):
     """
