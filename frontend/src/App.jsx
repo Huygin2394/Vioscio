@@ -122,6 +122,37 @@ function App() {
     }
   }
 
+  async function handleAddComment(blogId) {
+    const content = globalThis.prompt?.('Nhập bình luận của bạn:') ?? ''
+    if (!content.trim()) return
+
+    try {
+      setError(null)
+      const res = await fetch(`${apiBaseUrl}/api/blogs/${blogId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+        },
+        body: JSON.stringify({ content }),
+      })
+      if (!res.ok) throw new Error(`Failed to add comment: ${res.status}`)
+
+      setBlogs((prev) =>
+        prev.map((blog) => {
+          if (blog.id !== blogId) return blog
+          const currentCount = Number.isFinite(Number(blog.comments_count)) ? Number(blog.comments_count) : 0
+          return {
+            ...blog,
+            comments_count: currentCount + 1,
+          }
+        }),
+      )
+    } catch (err) {
+      setError(err?.message || 'Unknown error')
+    }
+  }
+
   function renderAuthorPage() {
     return (
       <main className="page">
@@ -297,6 +328,16 @@ function App() {
                     </button>
                     <span className="likeCount" aria-label={`${blog.likes_count ?? 0} lượt thích`}>
                       {blog.likes_count ?? 0} ❤️
+                    </span>
+                    <button
+                      type="button"
+                      className="button blogs__commentButton"
+                      onClick={() => handleAddComment(blog.id)}
+                    >
+                      Bình luận
+                    </button>
+                    <span className="commentCount" aria-label={`${blog.comments_count ?? 0} bình luận`}>
+                      {blog.comments_count ?? 0} 💬
                     </span>
                   </div>
                 </article>
