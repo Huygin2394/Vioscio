@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import heroImage from './assets/hero.png'
+import heroImage from './assets/vite.svg'
 
 function getOrCreateUserId() {
   try {
@@ -23,8 +23,22 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadToken, setReloadToken] = useState(0)
+  const [author, setAuthor] = useState(null)
+  const [authorLoading, setAuthorLoading] = useState(false)
+  const [authorError, setAuthorError] = useState(null)
+  const [authorReloadToken, setAuthorReloadToken] = useState(0)
+  const [route, setRoute] = useState(() => (globalThis.location?.hash || '#/').replace('#', ''))
   const apiBaseUrl = useMemo(() => import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000', [])
   const [userId] = useState(() => getOrCreateUserId())
+
+  useEffect(() => {
+    function onHashChange() {
+      setRoute((globalThis.location?.hash || '#/').replace('#', ''))
+    }
+    globalThis.addEventListener?.('hashchange', onHashChange)
+    onHashChange()
+    return () => globalThis.removeEventListener?.('hashchange', onHashChange)
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -57,6 +71,29 @@ function App() {
     return () => controller.abort()
   }, [reloadToken, apiBaseUrl, userId])
 
+  useEffect(() => {
+    if (route !== '/author') return
+    const controller = new AbortController()
+
+    async function loadAuthor() {
+      try {
+        setAuthorLoading(true)
+        setAuthorError(null)
+        const res = await fetch(`${apiBaseUrl}/api/author`, { signal: controller.signal })
+        if (!res.ok) throw new Error(`Failed to load author: ${res.status}`)
+        const data = await res.json()
+        setAuthor(data && typeof data === 'object' ? data : null)
+      } catch (err) {
+        if (err?.name !== 'AbortError') setAuthorError(err?.message || 'Unknown error')
+      } finally {
+        setAuthorLoading(false)
+      }
+    }
+
+    loadAuthor()
+    return () => controller.abort()
+  }, [route, apiBaseUrl, authorReloadToken])
+
   async function handleToggleLike(blogId) {
     try {
       setError(null)
@@ -85,6 +122,107 @@ function App() {
     }
   }
 
+  function renderAuthorPage() {
+    return (
+      <main className="page">
+        <header className="topbar">
+          <a className="topbar__brand" href="#/">
+            Vioscio
+          </a>
+          <nav className="topbar__nav">
+            <a className="topbar__link" href="#/">
+              Home
+            </a>
+            <a className="topbar__link topbar__link--active" href="#/author" aria-current="page">
+              Tác giả
+            </a>
+          </nav>
+        </header>
+
+        <section className="card">
+          <div className="card__badge">
+            <span className="card__badgeDot" aria-hidden="true" />
+            <span className="card__badgeText">Thông tin cá nhân</span>
+          </div>
+          <h1 className="card__title">Về tác giả</h1>
+
+          {authorLoading ? (
+            <div className="statusRow" aria-live="polite">
+              <div className="spinner" aria-hidden="true" />
+              <span>Đang tải thông tin...</span>
+            </div>
+          ) : authorError ? (
+            <div className="statusRow statusRow--error" role="alert">
+              <p className="statusRow__text">{authorError}</p>
+              <button className="button" type="button" onClick={() => setAuthorReloadToken((t) => t + 1)}>
+                Thử lại
+              </button>
+            </div>
+          ) : !author ? (
+            <p className="muted">Chưa có thông tin tác giả.</p>
+          ) : (
+            <div className="authorGrid">
+              <div className="authorHeader">
+                <div className="avatar" aria-hidden="true">
+                  {String(author.name || 'H')
+                    .slice(0, 1)
+                    .toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="authorName">{author.name || 'Tác giả'}</h2>
+                  <p className="authorRole">{author.role || ''}</p>
+                </div>
+              </div>
+
+              {author.bio ? <p className="authorBio">{author.bio}</p> : null}
+
+              <div className="authorMeta">
+                {author.location ? (
+                  <div className="metaItem">
+                    <span className="metaLabel">Khu vực</span>
+                    <span className="metaValue">{author.location}</span>
+                  </div>
+                ) : null}
+                {Array.isArray(author.stack) && author.stack.length ? (
+                  <div className="metaItem">
+                    <span className="metaLabel">Tech</span>
+                    <div className="metaPills">
+                      {author.stack.map((t) => (
+                        <span className="pill" key={t}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="authorLinks">
+                {author.contact?.email ? (
+                  <a className="linkButton" href={`mailto:${author.contact.email}`}>
+                    Email
+                  </a>
+                ) : null}
+                {author.links?.github ? (
+                  <a className="linkButton" href={author.links.github} target="_blank" rel="noreferrer">
+                    GitHub
+                  </a>
+                ) : null}
+                {author.links?.facebook ? (
+                  <a className="linkButton" href={author.links.facebook} target="_blank" rel="noreferrer">
+                    Facebook
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    )
+  }
+
+  if (route === '/author') return renderAuthorPage()
+
   return (
     <main className="home">
       <div className="hero">
@@ -100,6 +238,11 @@ function App() {
               <span className="pill">React</span>
               <span className="pill">FastAPI</span>
               <span className="pill">Vite</span>
+            </div>
+            <div className="hero__actions">
+              <a className="buttonLink" href="#/author">
+                Thông tin tác giả
+              </a>
             </div>
           </div>
 

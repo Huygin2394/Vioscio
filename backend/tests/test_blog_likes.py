@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from backend.app import main
+from app import main
 
 
 client = TestClient(main.app)
@@ -79,3 +79,11 @@ def test_toggle_like_requires_x_user_id_header():
     assert res.status_code == 400
     assert res.json()["detail"] == "Missing X-User-Id header"
 
+
+def test_author_information():
+    res = client.get("/api/author")
+    assert res.status_code == 200
+
+    data = res.json()
+    assert data["name"]
+    assert isinstance(data["stack"], list)
